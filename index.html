@@ -4,6 +4,79 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
         <script src="js/main.js"> </script>
         <script src="plotly.min.js"></script>
+        <script type="text/JavaScript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js" ></script>
+        <script>
+            var socket = io("wss://le-18262636.bitzonte.com", {path: '/stocks'});
+            var stocks_values = {};
+            var termino_stocks = false;
+            class Stock {
+                constructor(name){
+                    this.name = name;
+                    this.volumen_compra = 0;
+                    this.volumen_venta = 0;
+                    this.volumen_total = 0;
+                    this.alto = 0;
+                    this.bajo = 100000000;
+                    this.ultimo = 0;
+                    this.variacion = 0;
+                }
+            }
+            function WebSocketTest2() {
+                socket.emit("STOCKS");
+                socket.emit("UPDATE");
+                socket.emit("BUY");
+                socket.emit("SELL")
+
+            }
+            function WebSocketTest() {
+                var termino_stocks = false;
+                socket.on('STOCKS', (data) => {
+    
+                    for(const dato in data){
+                        var new_stock = new Stock(data[dato]["company_name"]);
+                        stocks_values[data[dato]["ticker"]] = new_stock;
+                    }
+                    console.log(stocks_values)
+                    termino_stocks = true;
+
+                });
+                socket.on('UPDATE', (data) => {
+                    if(termino_stocks == true){
+                        if(data["value"] >= stocks_values[data["ticker"]].alto){
+                            stocks_values[data["ticker"]].alto = data["value"];
+                        };
+                        if(stocks_values[data["ticker"]].bajo > data["value"]){
+                            stocks_values[data["ticker"]].bajo = data["value"]
+                        };
+                        
+                        stocks_values[data["ticker"]].variacion = parseFloat((100*data["value"]/stocks_values[data["ticker"]].ultimo) - 100);
+                        stocks_values[data["ticker"]].ultimo = data["value"];
+                    }
+                });
+                socket.on('BUY', (data) => {
+                    if(termino_stocks == true){
+                        console.log(stocks_values[data["ticker"]])
+                        stocks_values[data["ticker"]].volumen_compra += data["volume"]
+                        stocks_values[data["ticker"]].volumen_total += data["volume"]
+                    }         
+                });
+                socket.on('SELL', (data) => {
+                    if(termino_stocks == true){
+                        console.log(stocks_values[data["ticker"]])
+                        stocks_values[data["ticker"]].volumen_venta += data["volume"]
+                        stocks_values[data["ticker"]].volumen_total += data["volume"]
+
+                    }         
+                });
+
+            
+        }
+        WebSocketTest2();
+        WebSocketTest();
+        
+        
+        </script>
+        
         <meta charset="utf-8">
         <title></title>
     </head>
