@@ -9,6 +9,8 @@
             var socket = io("wss://le-18262636.bitzonte.com", {path: '/stocks'});
             var stocks_values = {};
             var termino_stocks = false;
+            var termino_exchanges = false;
+            var volumen_total_mercado = 0;
             class Stock {
                 constructor(name){
                     this.name = name;
@@ -19,29 +21,54 @@
                     this.bajo = 100000000;
                     this.ultimo = 0;
                     this.variacion = 0;
+                    this.exchange = null;
+                }
+            }
+            class Exchange {
+                constructor(name){
+                    this.name = name;
+                    this.volumen_compra = 0;
+                    this.volumen_venta = 0;
+                    this.volumen_total = 0;
+                    this.participacion_mercado = 0;
                 }
             }
             function WebSocketTest2() {
                 socket.emit("STOCKS");
+                socket.emit("EXCHANGES");
                 socket.emit("UPDATE");
                 socket.emit("BUY");
                 socket.emit("SELL")
 
             }
             function WebSocketTest() {
-                var termino_stocks = false;
                 socket.on('STOCKS', (data) => {
-    
                     for(const dato in data){
                         var new_stock = new Stock(data[dato]["company_name"]);
                         stocks_values[data[dato]["ticker"]] = new_stock;
                     }
-                    console.log(stocks_values)
-                    termino_stocks = true;
-
+                termino_stocks = true;
+                });
+                socket.on('EXCHANGES', (data) => {
+                    if(termino_stocks == true){
+                        console.log(data);
+                        for(var key in data){
+                            var new_exchange = new Exchange(data[key]["name"]);
+                            for(const company in data[key]["listed_companies"]){
+                                for(var llave in stocks_values){
+                                    if(stocks_values[llave].name == data[key]["listed_companies"][company]){
+                                        stocks_values[llave].exchange = new_exchange;
+                                    }
+                                }
+                            }
+                            console.log(data[key]["listed_companies"])
+                            termino_exchanges = true;
+    
+                    }
+                    }
                 });
                 socket.on('UPDATE', (data) => {
-                    if(termino_stocks == true){
+                    if(termino_exchanges == true){
                         if(data["value"] >= stocks_values[data["ticker"]].alto){
                             stocks_values[data["ticker"]].alto = data["value"];
                         };
@@ -54,22 +81,33 @@
                     }
                 });
                 socket.on('BUY', (data) => {
-                    if(termino_stocks == true){
+                    if(termino_exchanges == true){
                         console.log(stocks_values[data["ticker"]])
                         stocks_values[data["ticker"]].volumen_compra += data["volume"]
                         stocks_values[data["ticker"]].volumen_total += data["volume"]
+
+                        stocks_values[data["ticker"]].exchange.volumen_compra += data["volume"]
+                        stocks_values[data["ticker"]].exchange.volumen_total += data["volume"]
+
+                        volumen_total_mercado += data["volume"]
+                        stocks_values[data["ticker"]].exchange.participacion_mercado = 100*stocks_values[data["ticker"]].exchange.volumen_total/volumen_total_mercado
                     }         
                 });
                 socket.on('SELL', (data) => {
-                    if(termino_stocks == true){
+                    if(termino_exchanges == true){
                         console.log(stocks_values[data["ticker"]])
                         stocks_values[data["ticker"]].volumen_venta += data["volume"]
                         stocks_values[data["ticker"]].volumen_total += data["volume"]
 
+                        stocks_values[data["ticker"]].exchange.volumen_venta += data["volume"]
+                        stocks_values[data["ticker"]].exchange.volumen_total += data["volume"]
+
+                        volumen_total_mercado += data["volume"]
+                        stocks_values[data["ticker"]].exchange.participacion_mercado = 100*stocks_values[data["ticker"]].exchange.volumen_total/volumen_total_mercado
+
                     }         
                 });
 
-            
         }
         WebSocketTest2();
         WebSocketTest();
@@ -83,6 +121,7 @@
     <body>
         <div id="chart"></div>
         <script>
+            /*
             function getData(){
                 return Math.random();
             }
@@ -103,6 +142,7 @@
                     });
                 }
             }, 15);
+            */
         </script>
     
     </body>
