@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
+    
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
         <script src="js/main.js"> </script>
         <script src="plotly.min.js"></script>
-        <script type="text/JavaScript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js" ></script>
+        <script type="text/JavaScript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js" ></script>
         <script>
             var socket = io("wss://le-18262636.bitzonte.com", {path: '/stocks'});
             var stocks_values = {};
@@ -33,12 +34,28 @@
                     this.participacion_mercado = 0;
                 }
             }
+            function CreateTableStock(stock){
+                var title = "<tr>"+stock.name+"</tr>";
+                var volumen = "<tr>"+"Volumen Total Transado: "+stock.volumen_total+"</tr>";
+                var alto = "<tr>"+"Alto Histórico: "+stock.alto+"</tr>"
+                var bajo = "<tr>"+"Bajo Histórico: "+stock.bajo+"</tr>"
+                var ultimo = "<tr>"+"Último precio: "+stock.ultimo+"</tr>"
+                var variacion = "<tr>"+ "Variación porcentual: "+Math.round(stock.variacion*100)/100+"</tr>"
+                table = "<table>"+title+"<br>"+volumen+"<br>"+alto+"<br>"+bajo+"<br>"+ultimo+"<br>"+variacion+"<br>";
+                return table
+            };
+            function CreateTableExchange(exchange){
+                var title = "<tr>"+exchange.name+"</tr>";
+                var compra = "<tr>"+"Volumen Compra: "+exchange.volumen_compra+"</tr>";
+                var venta = "<tr>"+"Volumen Venta: "+exchange.volumen_venta+"</tr>"
+                var total = "<tr>"+"Volumen Total: "+exchange.volumen_total+"</tr>"
+                var participacion = "<tr>"+"Participación de Mercado: "+Math.round(exchange.participacion_mercado*100)/100+"</tr>"
+                table = "<table>"+title+"<br>"+compra+"<br>"+venta+"<br>"+total+"<br>"+participacion+"<br>";
+                return table
+            }
             function WebSocketTest2() {
                 socket.emit("STOCKS");
                 socket.emit("EXCHANGES");
-                socket.emit("UPDATE");
-                socket.emit("BUY");
-                socket.emit("SELL")
 
             }
             function WebSocketTest() {
@@ -46,6 +63,9 @@
                     for(const dato in data){
                         var new_stock = new Stock(data[dato]["company_name"]);
                         stocks_values[data[dato]["ticker"]] = new_stock;
+                        console.log("EL ID QUE LE DOY ES:"+new_stock.name)
+                        $('#tables').append($('<div/>', { id: new_stock.name }));
+                        console.log("TABLA CREADA:"+new_stock.name)
                     }
                 termino_stocks = true;
                 });
@@ -54,6 +74,7 @@
                         console.log(data);
                         for(var key in data){
                             var new_exchange = new Exchange(data[key]["name"]);
+                            $('#tables').append($('<div/>', { id: new_exchange.name }));
                             for(const company in data[key]["listed_companies"]){
                                 for(var llave in stocks_values){
                                     if(stocks_values[llave].name == data[key]["listed_companies"][company]){
@@ -78,6 +99,8 @@
                         
                         stocks_values[data["ticker"]].variacion = parseFloat((100*data["value"]/stocks_values[data["ticker"]].ultimo) - 100);
                         stocks_values[data["ticker"]].ultimo = data["value"];
+
+                        document.getElementById(stocks_values[data["ticker"]].name).innerHTML = CreateTableStock(stocks_values[data["ticker"]])
                     }
                 });
                 socket.on('BUY', (data) => {
@@ -91,7 +114,10 @@
 
                         volumen_total_mercado += data["volume"]
                         stocks_values[data["ticker"]].exchange.participacion_mercado = 100*stocks_values[data["ticker"]].exchange.volumen_total/volumen_total_mercado
-                    }         
+
+                        document.getElementById(stocks_values[data["ticker"]].name).innerHTML = CreateTableStock(stocks_values[data["ticker"]])
+                        document.getElementById(stocks_values[data["ticker"]].exchange.name).innerHTML = CreateTableExchange(stocks_values[data["ticker"]].exchange)
+                    }   
                 });
                 socket.on('SELL', (data) => {
                     if(termino_exchanges == true){
@@ -104,6 +130,9 @@
 
                         volumen_total_mercado += data["volume"]
                         stocks_values[data["ticker"]].exchange.participacion_mercado = 100*stocks_values[data["ticker"]].exchange.volumen_total/volumen_total_mercado
+
+                        document.getElementById(stocks_values[data["ticker"]].name).innerHTML = CreateTableStock(stocks_values[data["ticker"]])
+                        document.getElementById(stocks_values[data["ticker"]].exchange.name).innerHTML = CreateTableExchange(stocks_values[data["ticker"]].exchange)
 
                     }         
                 });
@@ -119,30 +148,33 @@
         <title></title>
     </head>
     <body>
+        
         <div id="chart"></div>
+        <div id="tables"></div>
         <script>
-            /*
+            
             function getData(){
                 return Math.random();
             }
 
             Plotly.plot('chart',[{
-                y:[getData()],
+                /*
+                PLOTLY DENTRO DEL STOCK
+                PLOTY EXTEND DENTRO DEL UPDATE
+                Poner plotly dentro de la función, llamar funcion por cada ticker
+                cambiar chart por nombre ticker
+                $('#chart').append($('<div/>', { id: attrValue}))
+                attrValue = nombre ticker
+
+                dentro del x meter time, dentro del y meter value
+                time hay que usar función -> manda garrido
+                */
+                y:[],
+                x:[],
                 type:'line'
             }]);
-            var cnt=0;
-            setInterval(function(){
-                Plotly.extendTraces('chart', {y:[[getData()]]}, [0]);
-                cnt++;
-                if(cnt > 500){
-                    Plotly.relayout('chart',{
-                        xaxis:{
-                            range: [cnt-500,cnt]
-                        }
-                    });
-                }
-            }, 15);
-            */
+            Plotly.extendTraces('chart', {x:[[getData()]], y:[[getData()]]}, [0]);
+            
         </script>
     
     </body>
