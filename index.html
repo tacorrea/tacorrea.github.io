@@ -29,8 +29,12 @@
                 }
             }
             class Exchange {
-                constructor(name){
+                constructor(name, ticker, country, address, listed_companies){
                     this.name = name;
+                    this.ticker = ticker;
+                    this.country = country;
+                    this.address = address;
+                    this.listed_companies = listed_companies;
                     this.volumen_compra = 0;
                     this.volumen_venta = 0;
                     this.volumen_total = 0;
@@ -44,6 +48,19 @@
                 table ="<table>"+name+"<br>"+ticker+"<br>"+country+"<br>";
                 return table
             };
+            function CreateTableInfoExchange(exchange){
+                var name = "<tr>"+"Nombre: " +exchange.name+"</tr>";
+                var ticker = "<tr>"+"Ticker: "+exchange.ticker+"</tr>";
+                var country = "<tr>"+"País: "+exchange.country+"</tr>"
+                var address = "<tr>"+"Dirección: "+exchange.address+"</tr>"
+                var companies = ""
+                for(const dato in exchange.listed_companies){
+                    companies += " " + exchange.listed_companies[dato] + "|"
+                }
+                var companies_tabla = "<tr>"+"Compañías: "+companies+"</tr>"
+                table ="<table>"+name+"<br>"+ticker+"<br>"+country+"<br>";
+                return table
+            }
             function CreateTableStock(stock){
                 var title = "<tr>"+stock.name+"</tr>";
                 var volumen = "<tr>"+"Volumen Total Transado: "+stock.volumen_total+"</tr>";
@@ -108,8 +125,10 @@
                 socket.on('EXCHANGES', (data) => {
                     if(termino_stocks == true){
                         for(var key in data){
-                            var new_exchange = new Exchange(data[key]["name"]);
-                            $('#tables').append($('<div/>', { id: new_exchange.name }));
+                            var new_exchange = new Exchange(data[key]["name"], data[key]["exchange_ticker"], data[key]["country"], data[key]["address"], data[key]["listed_companies"]);
+                            $('#tables_2').append($('<div/>', { id: new_exchange.name }));
+                            $('#tabla_exchange').append($('<div/>', { id: new_exchange.ticker }))
+                            document.getElementById(new_exchange.ticker).innerHTML = CreateTableInfoExchange(new_exchange);
                             for(const company in data[key]["listed_companies"]){
                                 for(var llave in stocks_values){
                                     if(stocks_values[llave].name == data[key]["listed_companies"][company]){
@@ -185,11 +204,34 @@
         
         <meta charset="utf-8">
         <title></title>
+        <style>
+            .button {
+              background-color: #c9221c;
+              border: none;
+              color: black;
+              padding: 30px 34px;
+              text-align: center;
+              text-decoration: none;
+              display: inline-block;
+              font-size: 20px;
+              margin: 4px 2px;
+              cursor: pointer;
+            }
+          </style>
     </head>
+    <h1> TAREA 3 </h1>
     <body>
+        <a href="disconnected.html" class="button">Desconectarse</a>
+        <h2> Información Exchanges</h2>
+        <div id="tabla_exchange"></div>
+        <h2> Información Stocks</h2>
         <div id="tabla_datos"></div>
+        <h2> Gráficos valor de cada acción </h2>
         <div id="chart"></div>
+        <h2> Indicadores Stocks </h2>
         <div id="tables"></div>
+        <h2> Indicadores Exchange</h2>
+        <div id="tables_2"></div>
     
     </body>
 </html>
