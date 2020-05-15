@@ -13,8 +13,11 @@
             var termino_exchanges = false;
             var volumen_total_mercado = 0;
             class Stock {
-                constructor(name){
+                constructor(id, name, ticker, pais){
+                    this.id = id;
                     this.name = name;
+                    this.ticker = ticker;
+                    this.pais = pais;
                     this.volumen_compra = 0;
                     this.volumen_venta = 0;
                     this.volumen_total = 0;
@@ -34,6 +37,13 @@
                     this.participacion_mercado = 0;
                 }
             }
+            function CreateTableInfoStock(stock){
+                var name = "<tr>"+"Nombre: " +stock.name+"</tr>";
+                var ticker = "<tr>"+"Ticker: "+stock.ticker+"</tr>";
+                var country = "<tr>"+"País: "+stock.pais+"</tr>"
+                table ="<table>"+name+"<br>"+ticker+"<br>"+country+"<br>";
+                return table
+            };
             function CreateTableStock(stock){
                 var title = "<tr>"+stock.name+"</tr>";
                 var volumen = "<tr>"+"Volumen Total Transado: "+stock.volumen_total+"</tr>";
@@ -52,16 +62,18 @@
                 var participacion = "<tr>"+"Participación de Mercado: "+Math.round(exchange.participacion_mercado*100)/100+"</tr>"
                 table = "<table>"+title+"<br>"+compra+"<br>"+venta+"<br>"+total+"<br>"+participacion+"<br>";
                 return table
-            }
+            };
             function WebSocketTest2() {
                 socket.emit("STOCKS");
                 socket.emit("EXCHANGES");
-            }
+            };
 
             function WebSocketTest() {
                 socket.on('STOCKS', (data) => {
+                    var id = 0;
                     for(const dato in data){
-                        var new_stock = new Stock(data[dato]["company_name"]);
+                        var new_stock = new Stock(id, data[dato]["company_name"], data[dato]["ticker"], data[dato]["country"]);
+                        
                         var layout = {
                             title: data[dato]["company_name"], 
                             xaxis:{
@@ -87,6 +99,9 @@
                             }
                         }], layout);
                         $('#tables').append($('<div/>', { id: new_stock.name }));
+                        $('#tabla_datos').append($('<div/>', { id: id }));
+                        document.getElementById(id).innerHTML = CreateTableInfoStock(new_stock);
+                        id++;
                     }
                 termino_stocks = true;
                 });
@@ -172,7 +187,7 @@
         <title></title>
     </head>
     <body>
-        
+        <div id="tabla_datos"></div>
         <div id="chart"></div>
         <div id="tables"></div>
     
