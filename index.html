@@ -62,14 +62,30 @@
                 socket.on('STOCKS', (data) => {
                     for(const dato in data){
                         var new_stock = new Stock(data[dato]["company_name"]);
+                        var layout = {
+                            title: data[dato]["company_name"], 
+                            xaxis:{
+                                title: 'Tiempo',
+                                showgrid: false,
+                                zeroline: false
+                            },
+                            yaxis: {
+                                title: 'Valor acción',
+                                showline: false
+                            }
+                        };
                         stocks_values[data[dato]["ticker"]] = new_stock;
                         console.log(new_stock.ticker);
                         $('#chart').append($('<div/>', { id: data[dato]["ticker"] }))
                         Plotly.newPlot(data[dato]["ticker"],[{
                             y:[],
                             x:[],
-                            type:'line'
-                        }]);
+                            type:'line',
+                            line: {
+                                color: 'rgb(219, 64, 82)',
+                                width: 4
+                            }
+                        }], layout);
                         $('#tables').append($('<div/>', { id: new_stock.name }));
                     }
                 termino_stocks = true;
