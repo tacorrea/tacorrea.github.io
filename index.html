@@ -56,22 +56,26 @@
             function WebSocketTest2() {
                 socket.emit("STOCKS");
                 socket.emit("EXCHANGES");
-
             }
+
             function WebSocketTest() {
                 socket.on('STOCKS', (data) => {
                     for(const dato in data){
                         var new_stock = new Stock(data[dato]["company_name"]);
                         stocks_values[data[dato]["ticker"]] = new_stock;
-                        console.log("EL ID QUE LE DOY ES:"+new_stock.name)
+                        console.log(new_stock.ticker);
+                        $('#chart').append($('<div/>', { id: data[dato]["ticker"] }))
+                        Plotly.newPlot(data[dato]["ticker"],[{
+                            y:[],
+                            x:[],
+                            type:'line'
+                        }]);
                         $('#tables').append($('<div/>', { id: new_stock.name }));
-                        console.log("TABLA CREADA:"+new_stock.name)
                     }
                 termino_stocks = true;
                 });
                 socket.on('EXCHANGES', (data) => {
                     if(termino_stocks == true){
-                        console.log(data);
                         for(var key in data){
                             var new_exchange = new Exchange(data[key]["name"]);
                             $('#tables').append($('<div/>', { id: new_exchange.name }));
@@ -101,6 +105,10 @@
                         stocks_values[data["ticker"]].ultimo = data["value"];
 
                         document.getElementById(stocks_values[data["ticker"]].name).innerHTML = CreateTableStock(stocks_values[data["ticker"]])
+
+                        var time = new Date(data["time"]);
+                        Plotly.extendTraces(data["ticker"], {x:[[time]], y:[[data["value"]]]}, [0]);
+
                     }
                 });
                 socket.on('BUY', (data) => {
@@ -151,31 +159,6 @@
         
         <div id="chart"></div>
         <div id="tables"></div>
-        <script>
-            
-            function getData(){
-                return Math.random();
-            }
-
-            Plotly.plot('chart',[{
-                /*
-                PLOTLY DENTRO DEL STOCK
-                PLOTY EXTEND DENTRO DEL UPDATE
-                Poner plotly dentro de la función, llamar funcion por cada ticker
-                cambiar chart por nombre ticker
-                $('#chart').append($('<div/>', { id: attrValue}))
-                attrValue = nombre ticker
-
-                dentro del x meter time, dentro del y meter value
-                time hay que usar función -> manda garrido
-                */
-                y:[],
-                x:[],
-                type:'line'
-            }]);
-            Plotly.extendTraces('chart', {x:[[getData()]], y:[[getData()]]}, [0]);
-            
-        </script>
     
     </body>
 </html>
